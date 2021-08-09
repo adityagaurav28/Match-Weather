@@ -1,0 +1,101 @@
+{% extends 'mainapp\base.html' %}
+
+{% block content %}
+        {% for date in details %}
+            <p class="datesHead">{{date.onDate}}</p>
+            <div class="dateCard">
+            {% for series in date.series_detail_set.all %}
+                {% for match in series.match_detail_set.all %}
+                    <div class="matchCard">
+                            <p class="seriesName">{{series.seriesName}}</p>
+                            <p class="matchName">{{match.matchName}}</p>
+                            <p class="matchTimeLocation">{{match.matchLocalTime}} | {{match.matchLocation}}</p>
+                            <div class="matchSubCards">
+                                <div class="scorecard">
+                                    <p class="subCardHeading">Match Status</p>
+                                    <p class="status">{{match.matchStatus}}</p>
+                                    {% if match.matchFirstInning != 'Not Started' %}
+                                        <p>{{match.matchFirstInning}}</p>
+                                    {% endif %}
+                                    {% if match.matchSecondInning != 'Not Started' %}
+                                        <p>{{match.matchSecondInning}}</p>
+                                    {% endif %}
+                
+                                </div>
+                                <div class="weatherCondition">
+                                    {% if match.matchTime == 'future' %}
+                                        <p class="subCardHeading">Predicted Weather</p>
+                                        <div class="tempCloudHumidity">
+                                            <p><span>{{match.matchTemp}}</span>Temp</p>  
+                                            <div class="border"></div>
+                                            <p><span>{{match.matchCloud}}<span>%</span></span>Cloud Cover</p> <div 
+                                            class="border"></div>
+                                            <p><span>{{match.matchHumidity}}<span>%</span></span>Humidity</p>
+                                        </div>
+                                        <div class="rainConditions">
+                                            <img src="https:{{match.matchCondition.icon}}" alt="">
+                                            <div class="conditions">
+                                                <p>{{match.matchCondition.text}}</p>
+                                                <p>Rain Possibility: <span>{{match.matchChanceofRain}}%</span></p>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="subCardHeading">Current Weather</p>
+                                        <div class="tempCloudHumidity">
+                                            <p><span>{{match.matchTemp}}</span>Temp</p>  
+                                            <div class="border"></div>
+                                            <p><span>{{match.matchCloud}}<span>%</span></span>Cloud Cover</p> <div 
+                                            class="border"></div>
+                                            <p><span>{{match.matchHumidity}}<span>%</span></span>Humidity</p>
+                                        </div>
+                                        <div class="rainConditions">
+                                            <img src="https:{{match.matchCondition.icon}}" alt="">
+                                            <div class="conditions">
+                                                <p>{{match.matchCondition.text}}</p>
+                                                <p>Rain Possibility: <span>{{match.matchChanceofRain}}%</span></p>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>    
+                            </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            </div>
+        {% endfor %}
+    {% for date in details %}
+        <p>{{date.onDate}}</p>
+        {% for series in date.series_detail_set.all %}
+            <p>----{{series.seriesName}}</p>
+            {% for match in series.match_detail_set.all %}
+                <p>--------{{match.matchName}}</p>
+                <p>------------Match Link: {{match.matchLink}}</p>
+                <p>------------Time: {{match.matchLocalTime}}</p>
+                <p>------------Location: {{match.matchLocation}}</p>
+                <p>------------Scorecard: </p>
+                <p>------------------------ {{match.matchStatus}}</p>
+                {% if match.matchFirstInning != 'Not Started' %}
+                    <p>------------------------ {{match.matchFirstInning}}</p>
+                {% endif %}
+                {% if match.matchSecondInning != 'Not Started' %}
+                    <p>------------------------ {{match.matchSecondInning}}</p>
+                {% endif %}
+                {% if match.matchTime == 'current' %}
+                    <p>------------Match Time: {{match.matchTime}}</p>
+                    <p>----------------Match Current Temp: {{match.matchTemp}} </p>
+                    <p>----------------Match Current Cloud Cover: {{match.matchCloud}} </p>
+                    <p>----------------Match Current Humidity: {{match.matchHumidity}} </p>
+                    <p>----------------Match Current Temp: {{match.matchCondition.text}} </p>
+                {% else %}
+                    <p>------------Match Time: {{match.matchTime}}</p>
+                    <p>----------------Match Time Temp: {{match.matchTemp}} </p>
+                    <p>----------------Match Time Cloud Cover: {{match.matchCloud}} </p>
+                    <p>----------------Match Time Humidity: {{match.matchHumidity}} </p>
+                    <p>----------------Match Time Temp: {{match.matchCondition.text}} </p>
+                    <p>----------------Chances of Rain during match: {{match.matchChanceofRain}} </p>
+                {% endif %}
+                <img src="https:{{match.matchCondition.icon}}" alt="">
+            {% endfor %}
+        {% endfor %}
+    {% endfor %}
+{% endblock %}
