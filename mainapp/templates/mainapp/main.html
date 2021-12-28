@@ -63,39 +63,4 @@
             {% endfor %}
             </div>
         {% endfor %}
-    {% for date in details %}
-        <p>{{date.onDate}}</p>
-        {% for series in date.series_detail_set.all %}
-            <p>----{{series.seriesName}}</p>
-            {% for match in series.match_detail_set.all %}
-                <p>--------{{match.matchName}}</p>
-                <p>------------Match Link: {{match.matchLink}}</p>
-                <p>------------Time: {{match.matchLocalTime}}</p>
-                <p>------------Location: {{match.matchLocation}}</p>
-                <p>------------Scorecard: </p>
-                <p>------------------------ {{match.matchStatus}}</p>
-                {% if match.matchFirstInning != 'Not Started' %}
-                    <p>------------------------ {{match.matchFirstInning}}</p>
-                {% endif %}
-                {% if match.matchSecondInning != 'Not Started' %}
-                    <p>------------------------ {{match.matchSecondInning}}</p>
-                {% endif %}
-                {% if match.matchTime == 'current' %}
-                    <p>------------Match Time: {{match.matchTime}}</p>
-                    <p>----------------Match Current Temp: {{match.matchTemp}} </p>
-                    <p>----------------Match Current Cloud Cover: {{match.matchCloud}} </p>
-                    <p>----------------Match Current Humidity: {{match.matchHumidity}} </p>
-                    <p>----------------Match Current Temp: {{match.matchCondition.text}} </p>
-                {% else %}
-                    <p>------------Match Time: {{match.matchTime}}</p>
-                    <p>----------------Match Time Temp: {{match.matchTemp}} </p>
-                    <p>----------------Match Time Cloud Cover: {{match.matchCloud}} </p>
-                    <p>----------------Match Time Humidity: {{match.matchHumidity}} </p>
-                    <p>----------------Match Time Temp: {{match.matchCondition.text}} </p>
-                    <p>----------------Chances of Rain during match: {{match.matchChanceofRain}} </p>
-                {% endif %}
-                <img src="https:{{match.matchCondition.icon}}" alt="">
-            {% endfor %}
-        {% endfor %}
-    {% endfor %}
 {% endblock %}

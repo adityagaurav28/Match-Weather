@@ -1,0 +1,1 @@
+web: gunicorn match_weather.wsgi --log-file -
