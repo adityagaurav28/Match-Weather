@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-w0mchbc3+699j(n9iq+8uay1okuz6=6w9q*1_rhch1wi-c9j(s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['match-weather.herokuapp.com']
 
