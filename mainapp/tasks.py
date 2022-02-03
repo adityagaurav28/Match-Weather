@@ -19,6 +19,7 @@ def fetchCoordinates(address):
     return results[0]['geometry']['lat'],results[0]['geometry']['lng']
 
 def fetchMatch():
+    print('Fetch Match:', datetime.datetime.now())
     currentTime = int(datetime.datetime.now().timestamp())    
 
     models.Dates_Detail.objects.all().delete()
@@ -140,6 +141,7 @@ def fetchScoreSummary(matchObject):
     
 
 def weatherAndScoreSummary():
+    print("Weather and Score Summary:", datetime.datetime.now())
     matches = models.Match_Detail.objects.all()    
     currentTime = int(datetime.datetime.now().timestamp())    
     for match in matches:
