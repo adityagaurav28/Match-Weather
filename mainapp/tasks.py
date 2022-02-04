@@ -1,16 +1,13 @@
-from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 from bs4 import BeautifulSoup
 import datetime
+
+from requests.api import head
 
 from . import models
 
 from opencage.geocoder import OpenCageGeocode
 
-def start():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(fetchMatch, 'interval', minutes = 60)
-    scheduler.start()
 
 def fetchCoordinates(address):
     key = '7c1323c1b53c48dd83ccd2dc9b93a8e0'
@@ -19,65 +16,67 @@ def fetchCoordinates(address):
     return results[0]['geometry']['lat'],results[0]['geometry']['lng']
 
 def fetchMatch():
-    print('Fetch Match:', datetime.datetime.now())
+    lastUpdateTime = models.UpdateDataTime.objects.get(pk=1)
+    print(lastUpdateTime.updatedRecently())
     currentTime = int(datetime.datetime.now().timestamp())    
 
-    models.Dates_Detail.objects.all().delete()
-    url = 'https://www.cricbuzz.com/cricket-schedule/upcoming-series/all'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    dates = soup.findAll('div', attrs = {'class':'cb-col-100 cb-col'})
-    count = 0
-    for date in dates:
-        dateElement = date.find('div', attrs = {'class':'cb-lv-grn-strip text-bold'})
-        if dateElement is not None:
-            count = count + 1
-        else:
-            continue
-        serieses = date.findAll('div', attrs = {'class':'cb-col-100 cb-col'})
-        for series in serieses:
-            seriesName = series.find('a', attrs={'class':'cb-col-33 cb-col cb-mtchs-dy text-bold'})
-            matches = series.find('div', attrs={'class':'cb-col-67 cb-col'})
-            matchesInfo = matches.findAll('div', attrs={'class':'cb-ovr-flo cb-col-60 cb-col cb-mtchs-dy-vnu cb-adjst-lst'})
-            matchesTime = matches.findAll('div',attrs={'class':'cb-col-40 cb-col cb-mtchs-dy-tm cb-adjst-lst'})
-            for i in range(len(matchesInfo)):
-                match = matchesInfo[i].find('a', attrs={})
-                matchlink = "https://www.cricbuzz.com/api/html/cricket-hscorecard/" + match.get('href')[21:26]
-                time = matchesTime[i].findAll('span', attrs={'class':'schedule-date'})
-                epochTime = int(time[0].get('timestamp')[:-3])
-                localDateTime = datetime.datetime.fromtimestamp(epochTime)
-                address = matchesInfo[i].find('div', attrs={'itemprop':"location"})
-                stadiumName = address.find('span', attrs={'itemprop':"name"})
-                locality = address.find('span', attrs={'itemprop':"addressLocality"})
-                location = stadiumName.text + ' ' + locality.text
 
-                latitude, longitude = fetchCoordinates(location)
+    if lastUpdateTime.updatedRecently():
+        models.Dates_Detail.objects.all().delete()
+        url = 'https://www.cricbuzz.com/cricket-schedule/upcoming-series/all'
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        dates = soup.findAll('div', attrs = {'class':'cb-col-100 cb-col'})
+        count = 0
+        for date in dates:
+            dateElement = date.find('div', attrs = {'class':'cb-lv-grn-strip text-bold'})
+            if dateElement is not None:
+                count = count + 1
+            else:
+                continue
+            serieses = date.findAll('div', attrs = {'class':'cb-col-100 cb-col'})
+            for series in serieses:
+                seriesName = series.find('a', attrs={'class':'cb-col-33 cb-col cb-mtchs-dy text-bold'})
+                matches = series.find('div', attrs={'class':'cb-col-67 cb-col'})
+                matchesInfo = matches.findAll('div', attrs={'class':'cb-ovr-flo cb-col-60 cb-col cb-mtchs-dy-vnu cb-adjst-lst'})
+                matchesTime = matches.findAll('div',attrs={'class':'cb-col-40 cb-col cb-mtchs-dy-tm cb-adjst-lst'})
+                for i in range(len(matchesInfo)):
+                    match = matchesInfo[i].find('a', attrs={})
+                    matchlink = "https://www.cricbuzz.com/api/html/cricket-hscorecard/" + match.get('href')[21:26]
+                    time = matchesTime[i].findAll('span', attrs={'class':'schedule-date'})
+                    epochTime = int(time[0].get('timestamp')[:-3])
+                    localDateTime = datetime.datetime.fromtimestamp(epochTime)
+                    address = matchesInfo[i].find('div', attrs={'itemprop':"location"})
+                    stadiumName = address.find('span', attrs={'itemprop':"name"})
+                    locality = address.find('span', attrs={'itemprop':"addressLocality"})
+                    location = stadiumName.text + ' ' + locality.text
 
-                localDate = localDateTime.date()
+                    latitude, longitude = fetchCoordinates(location)
 
-                dateModel, res = models.Dates_Detail.objects.get_or_create(onDate=localDate)
-                if res:
-                    dateModel.save()
-                dateId = models.Dates_Detail.objects.get(onDate=localDate)
+                    localDate = localDateTime.date()
 
-                seriesModel, res = models.Series_Detail.objects.get_or_create(seriesName=seriesName.text,dateId=dateId)
-                if res:
-                    seriesModel.save()                
-                seriesId = models.Series_Detail.objects.get(seriesName=seriesName.text,dateId=dateId)
+                    dateModel, res = models.Dates_Detail.objects.get_or_create(onDate=localDate)
+                    if res:
+                        dateModel.save()
+                    dateId = models.Dates_Detail.objects.get(onDate=localDate)
 
-                test = models.Match_Detail(matchName=match.text,seriesId=seriesId,matchLocalTime=localDateTime.time(),matchEpochTime=epochTime,matchLocation=location,
-                matchLatitude = latitude, matchLongitude = longitude, matchLink = matchlink)
-                
-                if currentTime < epochTime - 3600:
-                    futureWeatherSummary(test)
+                    seriesModel, res = models.Series_Detail.objects.get_or_create(seriesName=seriesName.text,dateId=dateId)
+                    if res:
+                        seriesModel.save()                
+                    seriesId = models.Series_Detail.objects.get(seriesName=seriesName.text,dateId=dateId)
 
-                test.save()    
-        if count == 2:
-            break
+                    test = models.Match_Detail(matchName=match.text,seriesId=seriesId,matchLocalTime=localDateTime.time(),matchEpochTime=epochTime,matchLocation=location,
+                    matchLatitude = latitude, matchLongitude = longitude, matchLink = matchlink)
 
-    lastUpdateTime = models.UpdateDataTime.objects.get(pk=1)
-    lastUpdateTime.changeTime = datetime.datetime.now() + datetime.timedelta(hours=3)
-    lastUpdateTime.save()
+                    if currentTime < epochTime - 3600:
+                        match.matchTime = 'future'
+                        futureWeatherSummary(test)
+
+                    test.save()    
+            if count == 2:
+                break
+        lastUpdateTime.changeTime = datetime.datetime.now() + datetime.timedelta(hours=3)
+        lastUpdateTime.save()
 
 def fetchCurrentWeatherSummary(matchObject, currentTime):
     weatherURL = 'https://api.weatherapi.com/v1/forecast.json?key=bfc4226b16254458b9a120956212606&q={},{}&days=1&aqi=no&alerts=no'.format(matchObject.matchLatitude,matchObject.matchLongitude)
@@ -107,13 +106,15 @@ def futureHour(dayForecast,matchObject):
 
 
 def futureWeatherSummary(matchObject):
-    weatherURL = 'https://api.weatherapi.com/v1/forecast.json?key=bfc4226b16254458b9a120956212606&q={},{}&days=3&aqi=no&alerts=no'.format(matchObject.matchLatitude,matchObject.matchLongitude)
-    response = requests.get(weatherURL).json()
-    forecastAllDays = response['forecast']['forecastday']
-    if forecastAllDays[0]['date_epoch'] <= matchObject.matchEpochTime <= forecastAllDays[1]['date_epoch']:
-        futureHour(forecastAllDays[0]['hour'],matchObject)
-    elif forecastAllDays[1]['date_epoch'] <= matchObject.matchEpochTime <= forecastAllDays[2]['date_epoch']:
-        futureHour(forecastAllDays[1]['hour'],matchObject)
+    lastUpdateTime = models.UpdateDataTime.objects.get(pk=1)
+    if lastUpdateTime.updatedRecently():
+        weatherURL = 'https://api.weatherapi.com/v1/forecast.json?key=bfc4226b16254458b9a120956212606&q={},{}&days=3&aqi=no&alerts=no'.format(matchObject.matchLatitude,matchObject.matchLongitude)
+        response = requests.get(weatherURL).json()
+        forecastAllDays = response['forecast']['forecastday']
+        if forecastAllDays[0]['date_epoch'] <= matchObject.matchEpochTime <= forecastAllDays[1]['date_epoch']:
+            futureHour(forecastAllDays[0]['hour'],matchObject)
+        elif forecastAllDays[1]['date_epoch'] <= matchObject.matchEpochTime <= forecastAllDays[2]['date_epoch']:
+            futureHour(forecastAllDays[1]['hour'],matchObject)
             
 
 def fetchScoreTeams(matchObject, soup):    
@@ -141,7 +142,6 @@ def fetchScoreSummary(matchObject):
     
 
 def weatherAndScoreSummary():
-    print("Weather and Score Summary:", datetime.datetime.now())
     matches = models.Match_Detail.objects.all()    
     currentTime = int(datetime.datetime.now().timestamp())    
     for match in matches:
