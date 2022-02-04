@@ -13,6 +13,8 @@ def fetchCoordinates(address):
     key = '7c1323c1b53c48dd83ccd2dc9b93a8e0'
     geocoder = OpenCageGeocode(key)
     results = geocoder.geocode(address)
+    if len(results) == 0:
+        return None, None
     return results[0]['geometry']['lat'],results[0]['geometry']['lng']
 
 def fetchMatch():
@@ -52,6 +54,8 @@ def fetchMatch():
                     location = stadiumName.text + ' ' + locality.text
 
                     latitude, longitude = fetchCoordinates(location)
+                    if latitude is None and longitude is None:
+                        continue
 
                     localDate = localDateTime.date()
 
