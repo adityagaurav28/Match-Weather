@@ -77,7 +77,7 @@ def fetchMatch():
                         futureWeatherSummary(test)
 
                     test.save()    
-            if count == 2:
+            if count == 1:
                 break
         lastUpdateTime.changeTime = datetime.datetime.now() + datetime.timedelta(hours=3)
         lastUpdateTime.save()

@@ -1,1 +1,1 @@
-web: gunicorn match_weather.wsgi --timeout 60 --log-file -
+web: gunicorn match_weather.wsgi --log-file -
